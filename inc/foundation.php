@@ -1,8 +1,15 @@
 <?php
+/**
+ * Foundation Framework specific functions
+ *
+ * @package WordPress
+ * @subpackage Cornerstone
+ * @since Cornerstone 1.0.0
+ */
 
-// Foundation Framwork specific functions
-
-// Add Foundation 'active' class for the current menu item
+/**
+ * Add Foundation 'active' class for the current menu item
+ */
 if ( ! function_exists( 'cornerstone_active_nav_class' ) ) {
 	function cornerstone_active_nav_class( $classes, $item ) {
 	    if ( $item->current == 1 || $item->current_item_ancestor == true ) {
@@ -30,240 +37,6 @@ if ( ! function_exists( 'cornerstone_active_list_pages_class' ) ) {
 }
 add_filter( 'wp_list_pages', 'cornerstone_active_list_pages_class', 10, 2 );
 
-/**
- * class cornerstone_walker
- * Custom output to enable the the ZURB Navigation style.
- * Courtesy of Kriesi.at. http://www.kriesi.at/archives/improve-your-wordpress-navigation-menu-output
- * From required+ Foundation http://themes.required.ch
- */
-class cornerstone_walker extends Walker_Nav_Menu {
-
-	/**
-	 * Specify the item type to allow different walkers
-	 * @var array
-	 */
-	var $nav_bar = '';
-
-	function __construct( $nav_args = '' ) {
-
-		$defaults = array(
-			'item_type' => 'li',
-			'in_top_bar' => false,
-		);
-		$this->nav_bar = apply_filters( 'req_nav_args', wp_parse_args( $nav_args, $defaults ) );
-	}
-
-	function display_element( $element, &$children_elements, $max_depth, $depth=0, $args, &$output ) {
-
-        $id_field = $this->db_fields['id'];
-        if ( is_object( $args[0] ) ) {
-            $args[0]->has_children = ! empty( $children_elements[$element->$id_field] );
-        }
-        return parent::display_element( $element, $children_elements, $max_depth, $depth, $args, $output );
-    }
-
-	function start_el( &$output, $item, $depth = 0, $args = array(), $id = 0 ) {
-
-		global $wp_query;
-		$indent = ( $depth ) ? str_repeat( "\t", $depth ) : '';
-
-		$class_names = $value = '';
-
-		$classes = empty( $item->classes ) ? array() : (array) $item->classes;
-		$classes[] = 'menu-item-' . $item->ID;
-
-		// Check for flyout
-		$flyout_toggle = '';
-		if ( $args->has_children && $this->nav_bar['item_type'] == 'li' ) {
-
-			if ( $depth == 0 && $this->nav_bar['in_top_bar'] == false ) {
-
-				$classes[] = 'has-flyout';
-				$flyout_toggle = '<a href="#" class="flyout-toggle"><span></span></a>';
-
-			} else if ( $this->nav_bar['in_top_bar'] == true ) {
-
-				$classes[] = 'has-dropdown';
-				$flyout_toggle = '';
-			}
-
-		}
-
-		$class_names = join( ' ', apply_filters( 'nav_menu_css_class', array_filter( $classes ), $item, $args ) );
-		$class_names = $class_names ? ' class="' . esc_attr( $class_names ) . '"' : '';
-
-		if ( $depth > 0 ) {
-			$output .= $indent . '<li id="menu-item-'. $item->ID . '"' . $value . $class_names .'>';
-		} else {
-			$output .= $indent . ( $this->nav_bar['in_top_bar'] == true ? '<li class="divider"></li>' : '' ) . '<' . $this->nav_bar['item_type'] . ' id="menu-item-'. $item->ID . '"' . $value . $class_names .'>';
-		}
-
-		$attributes  = ! empty( $item->attr_title ) ? ' title="'  . esc_attr( $item->attr_title ) .'"' : '';
-		$attributes .= ! empty( $item->target )     ? ' target="' . esc_attr( $item->target     ) .'"' : '';
-		$attributes .= ! empty( $item->xfn )        ? ' rel="'    . esc_attr( $item->xfn        ) .'"' : '';
-		$attributes .= ! empty( $item->url )        ? ' href="'   . esc_attr( $item->url        ) .'"' : '';
-
-		$item_output  = $args->before;
-		$item_output .= '<a '. $attributes .'>';
-		$item_output .= $args->link_before . apply_filters( 'the_title', $item->title, $item->ID ) . $args->link_after;
-		$item_output .= '</a>';
-		$item_output .= $flyout_toggle; // Add possible flyout toggle
-		$item_output .= $args->after;
-
-		$output .= apply_filters( 'walker_nav_menu_start_el', $item_output, $item, $depth, $args );
-	}
-
-	function end_el( &$output, $item, $depth = 0, $args = array() ) {
-
-		if ( $depth > 0 ) {
-			$output .= "</li>\n";
-		} else {
-			$output .= "</" . $this->nav_bar['item_type'] . ">\n";
-		}
-	}
-
-	function start_lvl( &$output, $depth = 0, $args = array() ) {
-
-		if ( $depth == 0 && $this->nav_bar['item_type'] == 'li' ) {
-			$indent = str_repeat("\t", 1);
-    		$output .= $this->nav_bar['in_top_bar'] == true ? "\n$indent<ul class=\"dropdown\">\n" : "\n$indent<ul class=\"flyout\">\n";
-    	} else {
-			$indent = str_repeat("\t", $depth);
-    		$output .= $this->nav_bar['in_top_bar'] == true ? "\n$indent<ul class=\"dropdown\">\n" : "\n$indent<ul class=\"level-$depth\">\n";
-		}
-  	}
-}
-
-// Add a class to the wp_page_menu fallback
-if ( ! function_exists( 'foundation_page_menu_class' ) ) {
-	function foundation_page_menu_class($ulclass) {
-		return preg_replace('/<ul>/', '<ul class="nav-bar">', $ulclass, 1);
-	}
-}
-add_filter('wp_page_menu','foundation_page_menu_class');
-
-
-// Orbit, for WordPress
-add_action('init', 'Orbit');
-if ( ! function_exists( 'Orbit' ) ) {
-	function Orbit() {
-		$Orbit_args = array(
-			'label'	=> __('Orbit Slider'),
-			'singular_label' =>	__('Orbit'),
-			'public'	=>	true,
-			'show_ui'	=>	true,
-			'capability_type'	=>	'post',
-			'hierarchical'	=>	false,
-			'rewrite'	=>	true,
-			'supports'	=>	array('title', 'editor','page-attributes','thumbnail','custom-fields'),
-			'taxonomies' => array('category','post_tag')
-			);
-			register_post_type('Orbit', $Orbit_args);
-	}
-}
-
-add_action( 'add_meta_boxes', 'orbit_meta_box_add' );
-if ( ! function_exists( 'orbit_meta_box_add' ) ) {
-	function orbit_meta_box_add() {
-		add_meta_box( 'orbit-meta-box-id', 'Additional Orbit slider options', 'orbit_meta_box', 'Orbit', 'normal', 'high' );
-	}
-}
-
-if ( ! function_exists( 'orbit_meta_box' ) ) {
-	function orbit_meta_box( $post ) {
-		$values = get_post_custom( $post->ID );
-		$caption = isset( $values['_orbit_meta_box_caption_text'] ) ? esc_attr( $values['_orbit_meta_box_caption_text'][0] ) : '';
-		$link = isset( $values['_orbit_meta_box_link_text'] ) ? esc_attr( $values['_orbit_meta_box_link_text'][0] ) : '';
-		wp_nonce_field( 'orbit_meta_box_nonce', 'meta_box_nonce' );
-		?>
-		<p>
-			<label for="_orbit_meta_box_caption_text">Caption</label>
-			<textarea id="orbit_meta_box_caption_text" class="widefat" name="_orbit_meta_box_caption_text"><?php echo esc_attr( $caption ); ?></textarea>
-		</p>
-		<p>
-			<label for="_orbit_meta_box_link_text">Link</label>
-			<input type="text" id="orbit_meta_box_link_text" class="widefat" name="_orbit_meta_box_link_text" value="<?php echo $link; ?>" />
-		</p>
-		<?php
-	}
-}
-
-add_action( 'save_post', 'orbit_meta_box_save' );
-if ( ! function_exists( 'orbit_meta_box_save' ) ) {
-	function orbit_meta_box_save( $post_id ) {
-		// Bail if we're doing an auto save
-		if( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
-		
-		// if our nonce isn't there, or we can't verify it, bail
-		if( !isset( $_POST['meta_box_nonce'] ) || !wp_verify_nonce( $_POST['meta_box_nonce'], 'orbit_meta_box_nonce' ) ) return;
-		
-		// if our current user can't edit this post, bail
-		if( !current_user_can( 'edit_post' ) ) return;
-		
-		// now we can actually save the data
-		$allowed = array( 
-			'a' => array( // on allow a tags
-				'href' => array() // and those anchords can only have href attribute
-			)
-		);
-		
-		// Probably a good idea to make sure your data is set
-		if( isset( $_POST['_orbit_meta_box_caption_text'] ) )
-			update_post_meta( $post_id, '_orbit_meta_box_caption_text', wp_kses( $_POST['_orbit_meta_box_caption_text'], $allowed ) );
-		if( isset( $_POST['_orbit_meta_box_link_text'] ) )
-			update_post_meta( $post_id, '_orbit_meta_box_link_text', wp_kses( $_POST['_orbit_meta_box_link_text'], $allowed ) );
-	}
-}
-
-if ( ! function_exists( 'OrbitSlider' ) ) {
-	function OrbitSlider($orbitparam = null, $orbitsize = null) {
-
-		$args = array( 'post_type' => 'Orbit');
-		$loop = new WP_Query( $args );
-
-		if($orbitparam != '') {
-			echo '<ul data-orbit data-options="' . $orbitparam . '">';
-		} else {
-			echo '<ul data-orbit>';
-		}
-
-			while ( $loop->have_posts() ) : $loop->the_post();
-
-				if(has_post_thumbnail()) {
-
-					if($orbitsize != '') {
-						$orbitimagethumbnail = wp_get_attachment_image_src( get_post_thumbnail_id(), $orbitsize);
-						$orbitimage = $orbitimagethumbnail['0'];
-					} else {
-						$orbitimagefull = wp_get_attachment_image_src(get_post_thumbnail_id($post->ID), 'thumbnail_size');
-						$orbitimage = $orbitimagefull['0'];
-					}
-					$orbitimagealttext = get_post_meta(get_post_thumbnail_id($post->ID), '_wp_attachment_image_alt', true);
-					$orbitcaption = get_post_meta(get_the_ID(), '_orbit_meta_box_caption_text', true );
-					$orbitlink = get_post_meta(get_the_ID(), '_orbit_meta_box_link_text', true );
-					echo '<li>';
-					if($orbitlink != '') {echo '<a href="' . $orbitlink . '">';}
-					echo '<img src="'. $orbitimage . '" alt="' . $orbitimagealttext . '"/>';
-					if($orbitcaption != '') {echo '<div class="orbit-caption">' . $orbitcaption . '</div>';}
-					if($orbitlink != '') {echo '</a>';}
-					echo '</li>';
-
-				} else {
-
-					echo '<li><h2>';
-					the_title();
-					echo '</h2>';
-					the_content();
-					echo '</li>';
-
-				}
-
-			endwhile;
-
-			echo '</ul>';
-	}
-}
-
 
 /* Stop WordPress from using the sticky class and style WordPress sticky posts using the
 .wordpress-sticky class instead. It’s simpler than modifying Foundation to use a different class. */
@@ -276,3 +49,146 @@ if ( ! function_exists( 'remove_sticky_class' ) ) {
 	}
 }
 add_filter('post_class','remove_sticky_class');
+
+
+/**
+ * Custom Pagination
+ */
+if ( ! function_exists( 'emm_paginate' ) ) :
+/**
+ * Retrieve or display pagination code.
+ *
+ * The defaults for overwriting are:
+ * 'page' - Default is null (int). The current page. This function will
+ *      automatically determine the value.
+ * 'pages' - Default is null (int). The total number of pages. This function will
+ *      automatically determine the value.
+ * 'range' - Default is 3 (int). The number of page links to show before and after
+ *      the current page.
+ * 'gap' - Default is 3 (int). The minimum number of pages before a gap is
+ *      replaced with ellipses (...).
+ * 'anchor' - Default is 1 (int). The number of links to always show at begining
+ *      and end of pagination
+ * 'before' - Default is '<div class="emm-paginate">' (string). The html or text
+ *      to add before the pagination links.
+ * 'after' - Default is '</div>' (string). The html or text to add after the
+ *      pagination links.
+ * 'next_page' - Default is '__('&raquo;')' (string). The text to use for the
+ *      next page link.
+ * 'previous_page' - Default is '__('&laquo')' (string). The text to use for the
+ *      previous page link.
+ * 'echo' - Default is 1 (int). To return the code instead of echo'ing, set this
+ *      to 0 (zero).
+ *
+ * @author Eric Martin <eric@ericmmartin.com>
+ * @copyright Copyright (c) 2009, Eric Martin
+ * @version 1.0
+ *
+ * @param array|string $args Optional. Override default arguments.
+ * @return string HTML content, if not displaying.
+ */
+function emm_paginate($args = null) {
+	$defaults = array(
+		'page' => null, 'pages' => null,
+		'range' => 3, 'gap' => 3, 'anchor' => 1,
+		'before' => '<ul class="pagination" role="navigation" aria-label="Pagination">', 'after' => '</ul>',
+		'title' => __('<li class="unavailable" aria-disabled="true"></li>'),
+		'nextpage' => __('&raquo;'), 'previouspage' => __('&laquo'),
+		'echo' => 1
+	);
+
+	$r = wp_parse_args($args, $defaults);
+	extract($r, EXTR_SKIP);
+
+	if (!$page && !$pages) {
+		global $wp_query;
+
+		$page = get_query_var('paged');
+		$page = !empty($page) ? intval($page) : 1;
+
+		$posts_per_page = intval(get_query_var('posts_per_page'));
+		$pages = intval(ceil($wp_query->found_posts / $posts_per_page));
+	}
+
+	$output = "";
+	if ($pages > 1) {
+		$output .= "$before<li>$title</li>";
+		$ellipsis = '<li class="unavailable" aria-disabled="true">...</li>';
+
+		if ($page > 1 && !empty($previouspage)) {
+			$output .= '<li><a href="' . get_pagenum_link($page - 1) . '">' . $previouspage . '</a></li>';
+		}
+
+		$min_links = $range * 2 + 1;
+		$block_min = min($page - $range, $pages - $min_links);
+		$block_high = max($page + $range, $min_links);
+		$left_gap = (($block_min - $anchor - $gap) > 0) ? true : false;
+		$right_gap = (($block_high + $anchor + $gap) < $pages) ? true : false;
+
+		if ($left_gap && !$right_gap) {
+			$output .= sprintf('%s%s%s',
+				emm_paginate_loop(1, $anchor),
+				$ellipsis,
+				emm_paginate_loop($block_min, $pages, $page)
+			);
+		}
+		else if ($left_gap && $right_gap) {
+			$output .= sprintf('%s%s%s%s%s',
+				emm_paginate_loop(1, $anchor),
+				$ellipsis,
+				emm_paginate_loop($block_min, $block_high, $page),
+				$ellipsis,
+				emm_paginate_loop(($pages - $anchor + 1), $pages)
+			);
+		}
+		else if ($right_gap && !$left_gap) {
+			$output .= sprintf('%s%s%s',
+				emm_paginate_loop(1, $block_high, $page),
+				$ellipsis,
+				emm_paginate_loop(($pages - $anchor + 1), $pages)
+			);
+		}
+		else {
+			$output .= emm_paginate_loop(1, $pages, $page);
+		}
+
+		if ($page < $pages && !empty($nextpage)) {
+			$output .= '<li><a href="' . get_pagenum_link($page + 1) . '">' . $nextpage . '</a></li>';
+		}
+
+		$output .= $after;
+	}
+
+	if ($echo) {
+		echo $output;
+	}
+
+	return $output;
+}
+endif;
+
+
+if ( ! function_exists( 'emm_paginate_loop' ) ) :
+/**
+ * Helper function for pagination which builds the page links.
+ *
+ * @access private
+ *
+ * @author Eric Martin <eric@ericmmartin.com>
+ * @copyright Copyright (c) 2009, Eric Martin
+ * @version 1.0
+ *
+ * @param int $start The first link page.
+ * @param int $max The last link page.
+ * @return int $page Optional, default is 0. The current page.
+ */
+function emm_paginate_loop($start, $max, $page = 0) {
+	$output = "";
+	for ($i = $start; $i <= $max; $i++) {
+		$output .= ($page === intval($i))
+			? '<li class="current"><span class="show-for-sr">' . __( 'You\'re on page', 'cornerstone') . '</span> ' . $i . '</li>'
+			: '<li><a href="' . get_pagenum_link($i) . '" aria-label="' . __( 'Page', 'cornerstone') . ' ' . $i .'">' . $i . '</a></li>';
+	}
+	return $output;
+}
+endif;
