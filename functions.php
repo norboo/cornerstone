@@ -73,4 +73,4 @@ require_once('inc/foundation.php');
 /**
  * Orbit Slider
  */
-require_once('inc/orbit.php');
+//require_once('inc/orbit.php');
