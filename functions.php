@@ -69,3 +69,8 @@ require_once( 'inc/entry-meta.php' );
  * Zurb Foundation specific functions
  */
 require_once('inc/foundation.php');
+
+/**
+ * Orbit Slider
+ */
+require_once('inc/orbit.php');
